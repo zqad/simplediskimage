@@ -1,6 +1,6 @@
 How to use
 ==========
-See `examples/`
+See `examples/` or https://simplediskimage.readthedocs.io/en/latest/
 
 Dependencies
 ============
