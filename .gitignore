@@ -1,0 +1,13 @@
+# Editors
+.*.sw?
+*~
+
+# Examples
+*.img*
+/examples/generated/
+
+# Python
+*.pyc
+__pycache__
+*.egg-info
+/dist
