@@ -36,9 +36,9 @@ _MACHINE_SYSCALL_NUM = {
 
 _CACHED_WRAPPER = None
 
-def _copy_file_range(src_fd, dst_fd, count, offset_src=None, offset_dst=None):
-    """
-    Naïve copy_file_range implementation, with some non-compatibilities
+def naive_copy_file_range(src_fd, dst_fd, count, offset_src=None,
+                          offset_dst=None):
+    """Naïve copy_file_range implementation, with some non-compatibilities
 
     This function does *not* behave exactly like the libc version, as it does
     not care about the position in the file; it will gladly change it no
@@ -52,7 +52,9 @@ def _copy_file_range(src_fd, dst_fd, count, offset_src=None, offset_dst=None):
                        the current position
     :type src_fd: int
     :type dst_fd: int
-    :return: The amount copied
+    :type offset_src: int or None
+    :type offset_dst: int or None
+    :return: The amount copied, or a negative value on error
     """
     block_size = 16 * SI.Mi
     if offset_src is not None:
@@ -172,8 +174,8 @@ def get_copy_file_range():
     if not sys.platform.startswith("linux"):
         logger.warning("Not Linux, falling back to naive "
                        "copy_file_range implementation")
-        _CACHED_WRAPPER = _copy_file_range
-        return _copy_file_range
+        _CACHED_WRAPPER = naive_copy_file_range
+        return naive_copy_file_range
 
     # Check the kernel version
     kernel_release = platform.release()
@@ -182,16 +184,16 @@ def get_copy_file_range():
                                 int(srelease[1]) < 5):
         logger.warning("Old kernel version (%s), falling back to naive "
                        "copy_file_range implementation", kernel_release)
-        _CACHED_WRAPPER = _copy_file_range
-        return _copy_file_range
+        _CACHED_WRAPPER = naive_copy_file_range
+        return naive_copy_file_range
 
     # Make sure that the syscall exists on this platform
     machine = platform.machine()
     if not machine in _MACHINE_SYSCALL_NUM:
         logger.warning("Unknown machine %s for copy_file_range, falling back "
                        "to naive copy_file_range implementation", machine)
-        _CACHED_WRAPPER = _copy_file_range
-        return _copy_file_range
+        _CACHED_WRAPPER = naive_copy_file_range
+        return naive_copy_file_range
 
     logger.debug("Construcing syscall wrapper for copy_file_range")
     sc_copy_file_range = _make_syscall_wrapper(machine)
