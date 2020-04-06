@@ -36,9 +36,9 @@ _MACHINE_SYSCALL_NUM = {
 
 _CACHED_WRAPPER = None
 
-def _copy_file_range(src_fd, dst_fd, count, offset_src=None, offset_dst=None):
-    """
-    Naïve copy_file_range implementation, with some non-compatibilities
+def naive_copy_file_range(src_fd, dst_fd, count, src_offset=None,
+                          dst_offset=None):
+    """Naïve copy_file_range implementation, with some non-compatibilities
 
     This function does *not* behave exactly like the libc version, as it does
     not care about the position in the file; it will gladly change it no
@@ -46,22 +46,24 @@ def _copy_file_range(src_fd, dst_fd, count, offset_src=None, offset_dst=None):
 
     :param src_fd: Source/in file descriptor
     :param dst_fd: Destination/out file descriptor
-    :param offset_src: Offset to seek to in source fd, or None to run from the
+    :param src_offset: Offset to seek to in source fd, or None to run from the
                        current position
-    :param offset_dst: Offset to seek to in destination fd, or None to run from
+    :param dst_offset: Offset to seek to in destination fd, or None to run from
                        the current position
     :type src_fd: int
     :type dst_fd: int
-    :return: The amount copied
+    :type src_offset: int or None
+    :type dst_offset: int or None
+    :return: The amount copied, or a negative value on error
     """
     block_size = 16 * SI.Mi
-    if offset_src is not None:
-        if os.lseek(src_fd, offset_src, os.SEEK_SET) != offset_src:
-            logger.error("Unable to seek to %d in source", offset_src)
+    if src_offset is not None:
+        if os.lseek(src_fd, src_offset, os.SEEK_SET) != src_offset:
+            logger.error("Unable to seek to %d in source", src_offset)
             return -1
-    if offset_dst is not None:
-        if os.lseek(dst_fd, offset_dst, os.SEEK_SET) != offset_dst:
-            logger.error("Unable to seek to %d in destination", offset_dst)
+    if dst_offset is not None:
+        if os.lseek(dst_fd, dst_offset, os.SEEK_SET) != dst_offset:
+            logger.error("Unable to seek to %d in destination", dst_offset)
             return -1
     ncopied_total = 0
     while count > 0:
@@ -172,8 +174,8 @@ def get_copy_file_range():
     if not sys.platform.startswith("linux"):
         logger.warning("Not Linux, falling back to naive "
                        "copy_file_range implementation")
-        _CACHED_WRAPPER = _copy_file_range
-        return _copy_file_range
+        _CACHED_WRAPPER = naive_copy_file_range
+        return naive_copy_file_range
 
     # Check the kernel version
     kernel_release = platform.release()
@@ -182,16 +184,16 @@ def get_copy_file_range():
                                 int(srelease[1]) < 5):
         logger.warning("Old kernel version (%s), falling back to naive "
                        "copy_file_range implementation", kernel_release)
-        _CACHED_WRAPPER = _copy_file_range
-        return _copy_file_range
+        _CACHED_WRAPPER = naive_copy_file_range
+        return naive_copy_file_range
 
     # Make sure that the syscall exists on this platform
     machine = platform.machine()
     if not machine in _MACHINE_SYSCALL_NUM:
         logger.warning("Unknown machine %s for copy_file_range, falling back "
                        "to naive copy_file_range implementation", machine)
-        _CACHED_WRAPPER = _copy_file_range
-        return _copy_file_range
+        _CACHED_WRAPPER = naive_copy_file_range
+        return naive_copy_file_range
 
     logger.debug("Construcing syscall wrapper for copy_file_range")
     sc_copy_file_range = _make_syscall_wrapper(machine)

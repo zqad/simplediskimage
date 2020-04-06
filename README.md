@@ -47,7 +47,7 @@ Fedora 30 + podman with Debian 10 container where it skips to copy some data.
 
 Future
 ======
-- Configurable alignment
+- Configurable alignment, defaulting to 1MiB
 - Optional cleaning ("always", "not on error", "never")
 - Proper naive `copy_file_range` function, using `dup()`
 - Integrated and automated tests
