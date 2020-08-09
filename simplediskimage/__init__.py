@@ -280,8 +280,12 @@ class Partition():
         self._content_size_bytes = 0
         self._extra_bytes = 0
         self._fixed_size_bytes = None
-        self._fs_metadata_bytes = 1 * SI.Mi
         self._populate = None
+
+        # This is quite unscientific, and mostly based on observations
+        self._fs_metadata_bytes = 1 * SI.Mi
+        if filesystem.startswith("ext"):
+            self._fs_metadata_bytes = 2 * SI.Mi
 
     def _init_populate(self):
         if self._populate_actions is None:
