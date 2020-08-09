@@ -4,6 +4,7 @@
 
 # Examples
 *.img*
+*.ext4*
 /examples/generated/
 
 # Python

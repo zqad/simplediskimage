@@ -1,4 +1,4 @@
-# Copyright 2019  Jonas Eriksson
+# Copyright 2019, 2020  Jonas Eriksson
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -25,7 +25,8 @@ class Partitioner():
     Partitioner abstraction class
 
     :param image_path: Path to the image to be created
-    :param table_type: Partition table type (label type), 'gpt' or 'msdos'
+    :param table_type: Partition table type (label type), 'gpt' or 'msdos' (or
+                       'null' when using the NullPartitioner)
     """
     def __init__(self, image_path, table_type):
         raise DiskImageException("Not implemented!")
@@ -251,3 +252,36 @@ class PyParted(Partitioner):
                                                    fetched_partition))
 
         parted_disk.commit()
+
+class NullPartitioner(Partitioner):
+    """
+    Null partitioner abstraction, only allows for one partition
+    """
+
+    def __init__(self, image_path, table_type):
+        if table_type != "null":
+            raise InvalidArguments("NullPartitioner only supports 'null' "
+                                   "table type")
+        self._image_path = image_path
+        self._blocksize = 512
+        self._partition = None
+
+    def new_partition(self, offset_blocks, size_blocks, filesystem, label=None,
+                      flags=()):
+        if self._partition is not None:
+            raise InvalidArguments("NullPartitioner only supports 1 "
+                                   "partition")
+        if flags:
+            raise InvalidArguments("NullPartitioner does not support flags")
+        if label:
+            raise InvalidArguments("NullPartitioner does not support labels")
+
+        self._partition = {
+            'offset_blocks': offset_blocks,
+            'size_blocks': size_blocks,
+            'filesystem': filesystem,
+        }
+
+    def commit(self):
+        # No action needed
+        pass

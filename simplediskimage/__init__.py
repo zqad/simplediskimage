@@ -1,4 +1,4 @@
-# Copyright 2019  Jonas Eriksson
+# Copyright 2019, 2020  Jonas Eriksson
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import shutil
 from .tools import get_tool
 from . import cfr
 from .common import *
-from .partitioners import PyParted, Sfdisk
+from .partitioners import PyParted, Sfdisk, NullPartitioner
 
 def _copy_file_to_offset(source, destination, destination_offset_blocks,
                          block_size):
@@ -59,7 +59,8 @@ class DiskImage():
     Helper class to generate disk images.
 
     :param path: Path to the destination image file.
-    :param partition_table: Partition table (label) format, `gpt` or `msdos`.
+    :param partition_table: Partition table (label) format, `gpt` or `msdos`,
+                            (or 'null' for the NullPartitioner).
     :param temp_fmt: Format/path of the temp files containing format
                      strings for `path` and `extra`. Make sure the temp files
                      are on the same file system as the destination path.
@@ -68,7 +69,7 @@ class DiskImage():
     def __init__(self, path, partition_table='gpt',
                  temp_fmt="{path}-{extra}.tmp", partitioner=PyParted):
         self._path = path
-        if partition_table not in ('gpt', 'msdos'):
+        if partition_table not in ('gpt', 'msdos', 'null'):
             raise InvalidArguments("Partition table type {} is not "
                                    "supported".format(partition_table))
         self._partition_table = partition_table
@@ -84,6 +85,8 @@ class DiskImage():
             self._padding_bytes = ((34 + 1) * 512, 34 * 512)
         elif partition_table == 'msdos':
             self._padding_bytes = (512, 0)
+        elif partition_table == 'null':
+            self._padding_bytes = (0, 0)
 
     def new_partition(self, filesystem, partition_label=None,
                       partition_flags=None, filesystem_label=None):

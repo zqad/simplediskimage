@@ -16,3 +16,11 @@ Single bootable FAT partition, using sfdisk
    :language: python
    :lines: 16-
    :linenos:
+
+Using the NullPartitioner to create a raw image
+-----------------------------------------------
+
+.. literalinclude:: ../examples/null-partitioner.py
+   :language: python
+   :lines: 16-
+   :linenos:
