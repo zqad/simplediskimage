@@ -38,7 +38,7 @@ Known issues
 might not show until you try to mount the image.
 
 Parted misbehaves on some platforms (Debian 10), and shrinks partitions. Use
-Sfdisk instead. Additionally, some FAT implementations expect the file system
+Sfdisk instead. Additionally, some FAT implementations expect the filesystem
 to have exactly the same size as the partition, and thus padding them will not
 work, unless done exactly.
 

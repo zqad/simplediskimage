@@ -29,10 +29,10 @@ from .common import *
 from .partitioners import PyParted, Sfdisk, NullPartitioner
 
 def _copy_file_to_offset(source, destination, destination_offset_blocks,
-                         block_size):
+                         blocksize):
     copy_file_range = cfr.get_copy_file_range()
     length = os.path.getsize(source)
-    destination_offset_bytes = destination_offset_blocks * block_size
+    destination_offset_bytes = destination_offset_blocks * blocksize
     # Open destination in 'rb+', as this will allow us to write without
     # truncating the file.
     with open(source, 'rb') as f_src, open(destination, 'rb+') as f_dst:
@@ -63,8 +63,8 @@ class DiskImage():
                             (or 'null' for the NullPartitioner).
     :param temp_fmt: Format/path of the temp files containing format
                      strings for `path` and `extra`. Make sure the temp files
-                     are on the same file system as the destination path.
-    :param partitioner: Partitioner, for example PyParted or Sfdisk.
+                     are on the same filesystem as the destination path.
+    :param partitioner: Partitioner class, for example PyParted or Sfdisk.
     :param clean_temp_files: Whether or not to retain the temp files, accepts
                              either `"always"`, `"not on error"` or `"never"`.
                              Default is `"always"`. Note that an unconditional
@@ -105,10 +105,10 @@ class DiskImage():
         """
         Create a new partition on this disk image.
 
-        :param filesystem: File system, e.g. ext3 or fat32.
+        :param filesystem: Filesystem, e.g. ext3 or fat32.
         :param partition_label: Partition label, only supported by GPT.
         :param partition_flags: Partition flags, e.g. BOOT.
-        :param filesystem_label: File system label to be passed to mkfs.
+        :param filesystem_label: Filesystem label to be passed to mkfs.
         :param raw_filesystem_image: Flag that this partition will be populated
                                      using a raw filesystem image
         """
@@ -137,7 +137,7 @@ class DiskImage():
         if raw_filesystem_image:
             if filesystem_label is not None:
                 raise InvalidArguments("filesystem_label argument not "
-                                       "accepted for raw file system images")
+                                       "accepted for raw filesystem images")
             partition = RawPartition(self, temp_path, filesystem, metadata)
         else:
             partition = Partition(self, temp_path, filesystem, self._blocksize,
@@ -265,7 +265,7 @@ class Partition():
 
     :param disk_image: Disk image instance.
     :param path: Path to the partition temp file.
-    :param filesystem: File system for this partition.
+    :param filesystem: Filesystem for this partition.
     :param blocksize: Block (sector) size.
     :param metadata: Metadata.
     """
@@ -321,7 +321,7 @@ class Partition():
                 non_recursive_paths.append(source_path)
                 self._content_size_bytes += os.path.getsize(source_path)
             else:
-                Exception("Unsupported file type: {}", source_path)
+                InvalidArguments("Unsupported file type: {}", source_path)
 
         if recursive_paths:
             self._populate_actions.append(('copy recursive', recursive_paths,
@@ -398,11 +398,11 @@ class Partition():
         Run a check of this partition, also called by DiskImage.
         """
         if not self._mkfs.check():
-            logger.error("Could not find mkfs for file system %s",
+            logger.error("Could not find mkfs for filesystem %s",
                          self.filesystem)
             return False
         if self._populate_actions and not self._populate.check():
-            logger.error("Could not find populate tool for file system %s",
+            logger.error("Could not find populate tool for filesystem %s",
                          self.filesystem)
             return False
 
@@ -416,14 +416,14 @@ class Partition():
 
 class RawPartition(Partition):
     """
-    Simplified Partition class, used for partitions without file systems. Only
+    Simplified Partition class, used for partitions without filesystems. Only
     supports one file being copied (the raw image). Do not call directly, use
     `Diskimage.new_partition()`.
 
     :param disk_image: Disk image instance.
     :param temp_path: Temporary partition part, only used if the partition is
                       instructed to grow beyond the image size.
-    :param filesystem: File system for this partition.
+    :param filesystem: Filesystem for this partition.
     :param metadata: Metadata.
     """
     def __init__(self, disk_image, temp_path, filesystem, metadata):

@@ -56,7 +56,7 @@ def naive_copy_file_range(src_fd, dst_fd, count, offset_src=None,
     :type offset_dst: int or None
     :return: The amount copied, or a negative value on error
     """
-    block_size = 16 * SI.Mi
+    blocksize = 16 * SI.Mi
     if offset_src is not None:
         if os.lseek(src_fd, offset_src, os.SEEK_SET) != offset_src:
             logger.error("Unable to seek to %d in source", offset_src)
@@ -67,7 +67,7 @@ def naive_copy_file_range(src_fd, dst_fd, count, offset_src=None,
             return -1
     ncopied_total = 0
     while count > 0:
-        buffer = os.read(src_fd, min(block_size, count))
+        buffer = os.read(src_fd, min(blocksize, count))
         if not buffer:
             return ncopied_total
         ncopied = os.write(dst_fd, buffer)

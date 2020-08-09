@@ -84,10 +84,10 @@ class MkfsExt(Tool):
     """
     def mkfs(self, device, label=None):
         """
-        Create file system
+        Create filesystem
 
         :param device: Device, typically a file in our use case
-        :param label: File system label
+        :param label: Filesystem label
         """
         args = []
         if label is not None:
@@ -127,10 +127,10 @@ class MkfsFAT(Tool):
 
     def mkfs(self, device, label=None):
         """
-        Create file system
+        Create filesystem
 
         :param device: Device, typically a file in our use case
-        :param label: File system label
+        :param label: Filesystem label
         """
         args = ['-F', self._fat_size]
         if label is not None:
@@ -312,18 +312,18 @@ _TOOLS = {
 
 _TOOLS_CACHE = {}
 
-def get_tool(file_system, action):
+def get_tool(filesystem, action):
     """
-    Get a tool to perform a certain action on a certain file system type.
+    Get a tool to perform a certain action on a certain filesystem type.
 
-    :param file_system: File system, e.g. "fat16"
+    :param filesystem: Filesystem, e.g. "fat16"
     :param action: Action, e.g. "mkfs" or "populate"
     """
-    tool_tuple = (file_system, action)
+    tool_tuple = (filesystem, action)
     if tool_tuple not in _TOOLS_CACHE:
         if tool_tuple not in _TOOLS:
             raise ToolNotFound("Unable to find tool {} "
-                               "for {}".format(action, file_system))
+                               "for {}".format(action, filesystem))
         _TOOLS_CACHE[tool_tuple] = _TOOLS[tool_tuple]()
 
     return _TOOLS_CACHE[tool_tuple]

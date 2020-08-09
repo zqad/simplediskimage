@@ -19,7 +19,7 @@ Simple Disk Image Creation
 Introduction
 ============
 
-When preparing installer images or root file systems images for embedded
+When preparing installer images or root filesystems images for embedded
 devices, the classic way is to create a file, `losetup` it, partition it, run
 `mkfs`, mount it and copy data into it, unmount it, remember to remove the
 loopback device, etc. Mostly requiring root privileges and the `CAP_SYSADM`
@@ -27,10 +27,11 @@ capability.
 
 There are however tools to do most operations in user space, as long as you are
 willing to do some copying, as the tools do not handle offsets into files that
-well. It is however and error-prone operation, and who never remembers how
-many LBAs into the disk that the GPT streches, and even when looking it up
-forgets to account for the extra LBA left for MBR and DOS label compatibility,
-or the extra GPT at the end of the disk? My estimate is most.
+well. It is however and error-prone operation, and out of those that do it by
+hand: How many never remembers how many LBAs into the disk that the GPT
+streches, and even when looking it up forgets to account for the extra LBA left
+for MBR and DOS label compatibility, or the extra GPT at the end of the disk?
+My estimate is most, since I tend to.
 
 For the most times, you just need to set up a simple disk image with one or two
 partitions, typically just with FAT and/or ext. This library aims to

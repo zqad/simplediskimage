@@ -38,7 +38,7 @@ class Partitioner():
 
         :param offset_blocks: Offset for the new partition in blocks (sectors)
         :param size_blocks: Size of the new partition in blocks (sectors)
-        :param filesystem: File system of the new partition
+        :param filesystem: Filesystem of the new partition
         :param label: Partition label of the new partition, only for GPT
         :param flags: Flags for the new partition
         """
@@ -89,7 +89,7 @@ def _get_filesystem_type(filesystem, size_bytes):
         return 0x0B
 
     # Fall through
-    raise PartitionerException("Unknown file system: {}".format(filesystem))
+    raise PartitionerException("Unknown filesystem: {}".format(filesystem))
 
 class Sfdisk(Partitioner):
     """
