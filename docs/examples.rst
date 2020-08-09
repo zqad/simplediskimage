@@ -32,3 +32,16 @@ Using a raw image as the filesystem for a partition
    :language: python
    :lines: 16-
    :linenos:
+
+Initialize a file system using a rootfs archive
+-----------------------------------------------
+
+.. literalinclude:: ../examples/rootfs-in-p2.sh
+   :language: bash
+   :lines: 16-
+   :linenos:
+
+.. literalinclude:: ../examples/_rootfs-in-p2.py
+   :language: python
+   :lines: 16-
+   :linenos:

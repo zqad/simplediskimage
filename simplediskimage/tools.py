@@ -1,4 +1,4 @@
-# Copyright 2019  Jonas Eriksson
+# Copyright 2019, 2020  Jonas Eriksson
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ class MkfsExt(Tool):
     """
     Tool wrapper for mkfs.ext*
     """
-    def mkfs(self, device, label=None):
+    def mkfs(self, device, label=None, initial_data_root=None):
         """
         Create filesystem
 
@@ -93,6 +93,9 @@ class MkfsExt(Tool):
         if label is not None:
             args.append('-L')
             args.append(label)
+        if initial_data_root is not None:
+            args.append('-d')
+            args.append(initial_data_root)
         args.append(device)
         self.call(*args)
 
@@ -125,7 +128,7 @@ class MkfsFAT(Tool):
         self._fat_size = str(fat_size)
         super(MkfsFAT, self).__init__('mkfs.fat')
 
-    def mkfs(self, device, label=None):
+    def mkfs(self, device, label=None, initial_data_root=None):
         """
         Create filesystem
 
@@ -136,6 +139,9 @@ class MkfsFAT(Tool):
         if label is not None:
             args.append('-n')
             args.append(label)
+        if initial_data_root is not None:
+            raise DiskImageException("Got initial_data_root into a non-ext "
+                                     "mkfs, this should not happen")
         args.append(device)
         self.call(*args)
 

@@ -22,6 +22,7 @@ https://github.com/zqad/simplediskimage/
 import os
 import logging
 import shutil
+import stat
 
 from .tools import get_tool
 from . import cfr
@@ -281,6 +282,7 @@ class Partition():
         self._extra_bytes = 0
         self._fixed_size_bytes = None
         self._populate = None
+        self._initial_data_root = None
 
         # This is quite unscientific, and mostly based on observations
         self._fs_metadata_bytes = 1 * SI.Mi
@@ -334,6 +336,45 @@ class Partition():
             self._populate_actions.append(('copy', non_recursive_paths,
                                            destination))
 
+    def set_initial_data_root(self, source_path):
+        """
+        Set the initial data root directory, to be used when initializing the
+        file system. All contents of this directory will be included in the
+        file system. This differs from `copy()` in a few ways:
+
+        - The path will be used as the file system root, rather than being
+          copied as a file/directory under the root
+
+        - The users and unix rights will be preserved, unlike `copy()` which
+          always writes files owned by uid 0/gid 0.
+
+        - Hard links are handled correctly, and not copied twice
+
+        Note that this feature is only supported for the ext family of file
+        systems.
+
+        :param source_paths: The directory to use as the filesystem root.
+        """
+        if not self.filesystem.startswith("ext"):
+            raise InvalidArguments("set_initial_data_dir only supported for "
+                                   "ext* filesystems")
+        if not os.path.isdir(source_path):
+            raise InvalidArguments("Initial directory must be a directory")
+
+        # Use a tuple of the inode and device to keep track of which unique
+        # inodes we already summed up the sizes of
+        id_dict = {}
+        for parent, _dirs, files in os.walk(source_path):
+            for filename in files:
+                path = os.path.join(parent, filename)
+                stat_res = os.stat(path)
+                id_tuple = (stat_res[stat.ST_INO], stat_res[stat.ST_DEV])
+                if id_tuple not in id_dict:
+                    self._content_size_bytes += os.path.getsize(path)
+                    id_dict[id_tuple] = True
+
+        self._initial_data_root = source_path
+
     def set_extra_bytes(self, num):
         """
         Set the extra bytes to be added to the size on top of the content size.
@@ -386,7 +427,8 @@ class Partition():
 
         _create_sparse_file(self.path, file_size)
         self._mkfs.mkfs(self.path, label=self.metadata.get('filesystem_label',
-                                                           None))
+                                                           None),
+                        initial_data_root=self._initial_data_root)
         if self._populate_actions:
             self._populate.run(self.path, self._populate_actions)
 
@@ -447,6 +489,14 @@ class RawPartition(Partition):
         Not supported
         """
         raise InvalidArguments("Raw partition does not support mkdir")
+
+    def set_initial_data_root(self, path):
+        """
+        Not supported
+        """
+        raise InvalidArguments("Raw partition does not support "
+                               "set_initial_data_root")
+
 
     def copy(self, *source_paths, destination='/'):
         """
