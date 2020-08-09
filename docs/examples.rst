@@ -24,3 +24,11 @@ Using the NullPartitioner to create a raw image
    :language: python
    :lines: 16-
    :linenos:
+
+Using a raw image as the filesystem for a partition
+---------------------------------------------------
+
+.. literalinclude:: ../examples/raw-filesystem.py
+   :language: python
+   :lines: 16-
+   :linenos:

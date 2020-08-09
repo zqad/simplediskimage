@@ -100,7 +100,8 @@ class DiskImage():
         self._clean_temp_files = clean_temp_files
 
     def new_partition(self, filesystem, partition_label=None,
-                      partition_flags=None, filesystem_label=None):
+                      partition_flags=None, filesystem_label=None,
+                      raw_filesystem_image=False):
         """
         Create a new partition on this disk image.
 
@@ -108,6 +109,8 @@ class DiskImage():
         :param partition_label: Partition label, only supported by GPT.
         :param partition_flags: Partition flags, e.g. BOOT.
         :param filesystem_label: File system label to be passed to mkfs.
+        :param raw_filesystem_image: Flag that this partition will be populated
+                                     using a raw filesystem image
         """
         if self._partition_table != 'gpt':
             if partition_label is not None:
@@ -131,8 +134,14 @@ class DiskImage():
         if partition_label is not None:
             metadata['label'] = partition_label
 
-        partition = Partition(self, temp_path, filesystem, self._blocksize,
-                              metadata)
+        if raw_filesystem_image:
+            if filesystem_label is not None:
+                raise InvalidArguments("filesystem_label argument not "
+                                       "accepted for raw file system images")
+            partition = RawPartition(self, temp_path, filesystem, metadata)
+        else:
+            partition = Partition(self, temp_path, filesystem, self._blocksize,
+                                  metadata)
 
         self._partitions.append(partition)
 
@@ -325,13 +334,19 @@ class Partition():
         """
         Set the extra bytes to be added to the size on top of the content size.
 
+        Warning: When writing raw filesystem images to a partition, setting the
+        partition size to something other than the size specified by the file
+        system headers *will* confuse some partition parsing implementations.
+        Notably, this has been observed with U-boot and FAT.
+
         :param num: The number of bytes, see the SI class for conversion.
         """
         self._extra_bytes = num
 
     def set_fixed_size_bytes(self, num):
         """
-        Set a fixed size of this partition.
+        Set a fixed size of this partition. For raw filesystem images, see the
+        warnings under `set_extra_bytes()`.
 
         :param num: The number of bytes, see the SI class for conversion.
         """
@@ -389,6 +404,98 @@ class Partition():
         if self._populate_actions and not self._populate.check():
             logger.error("Could not find populate tool for file system %s",
                          self.filesystem)
+            return False
+
+        if self._fixed_size_bytes is not None:
+            if self._fixed_size_bytes < self.get_total_size_bytes():
+                logger.error("Could not fit everything into partition %s",
+                             self.path)
+                return False
+
+        return True
+
+class RawPartition(Partition):
+    """
+    Simplified Partition class, used for partitions without file systems. Only
+    supports one file being copied (the raw image). Do not call directly, use
+    `Diskimage.new_partition()`.
+
+    :param disk_image: Disk image instance.
+    :param temp_path: Temporary partition part, only used if the partition is
+                      instructed to grow beyond the image size.
+    :param filesystem: File system for this partition.
+    :param metadata: Metadata.
+    """
+    def __init__(self, disk_image, temp_path, filesystem, metadata):
+        self._disk_image = disk_image
+        self._temp_path = temp_path
+        self.path = None
+        self.filesystem = filesystem
+        self.metadata = metadata
+        self._fs_metadata_bytes = 0
+        self._blocksize = 1
+        self._extra_bytes = 0
+        self._content_size_bytes = 0
+        self._fixed_size_bytes = None
+
+    def mkdir(self, *dirs):
+        """
+        Not supported
+        """
+        raise InvalidArguments("Raw partition does not support mkdir")
+
+    def copy(self, *source_paths, destination='/'):
+        """
+        Copy one or more files or directories recursively to the destination
+        directory.
+
+        :param source_paths: The files to copy (only one file supported).
+        :param destination: The destination to which to copy, must be left out
+                            or `/`.
+        """
+        if len(source_paths) != 1 or self.path is not None:
+            raise InvalidArguments("Raw partition can only accept one file")
+
+        if destination != '/':
+            raise InvalidArguments("Raw partition expects destination to be /")
+
+        # Save source_path as the source
+        self.path = source_paths[0]
+        self._content_size_bytes = os.path.getsize(self.path)
+
+    def commit(self):
+        """
+        Usually a no-op, unless extra_bytes was set, or fixed_size_bytes does
+        not equal the size of the image
+        """
+        if not self.check():
+            raise CheckFailed("Check failed during commit")
+
+        # Nothing to do if the source file is the same as the size we report
+        # upwards
+        file_size = self.get_content_size_bytes()
+        if file_size == self._content_size_bytes:
+            return
+
+        # Need to use the temp_path and copy the image to it
+        _create_sparse_file(self.path, file_size)
+        _copy_file_to_offset(self.path, self._temp_path, 0, 1)
+        # Switch around to point to the temp file instead
+        self.path = self._temp_path
+
+    def clean(self):
+        """
+        Usually a no-op, unless we ended up creating the temp file
+        """
+        if os.path.exists(self._temp_path):
+            os.unlink(self._temp_path)
+
+    def check(self):
+        """
+        Run a check of this partition, also called by DiskImage.
+        """
+        if self.path is None:
+            logger.error("Raw partition did not get a source file")
             return False
 
         if self._fixed_size_bytes is not None:
