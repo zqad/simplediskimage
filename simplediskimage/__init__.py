@@ -65,9 +65,16 @@ class DiskImage():
                      strings for `path` and `extra`. Make sure the temp files
                      are on the same file system as the destination path.
     :param partitioner: Partitioner, for example PyParted or Sfdisk.
+    :param clean_temp_files: Whether or not to retain the temp files, accepts
+                             either `"always"`, `"not on error"` or `"never"`.
+                             Default is `"always"`. Note that an unconditional
+                             clean is usually run before image creation, and
+                             that the image is moved in place meaning that its
+                             temp file will disappear on successful runs.
     """
     def __init__(self, path, partition_table='gpt',
-                 temp_fmt="{path}-{extra}.tmp", partitioner=PyParted):
+                 temp_fmt="{path}-{extra}.tmp", partitioner=PyParted,
+                 clean_temp_files="always"):
         self._path = path
         if partition_table not in ('gpt', 'msdos', 'null'):
             raise InvalidArguments("Partition table type {} is not "
@@ -87,6 +94,10 @@ class DiskImage():
             self._padding_bytes = (512, 0)
         elif partition_table == 'null':
             self._padding_bytes = (0, 0)
+
+        if clean_temp_files not in ("always", "not on error", "never"):
+            raise InvalidArguments("Invalid argument for clean_temp_files")
+        self._clean_temp_files = clean_temp_files
 
     def new_partition(self, filesystem, partition_label=None,
                       partition_flags=None, filesystem_label=None):
@@ -159,53 +170,71 @@ class DiskImage():
         temp_path = self._temp_fmt.format(path=self._path, extra="image")
         _create_sparse_file(temp_path, image_size_bytes)
 
-        # Create disk label and constraint
-        partitioner = self._partitioner(temp_path, self._partition_table)
+        try:
+            # Create disk label and constraint
+            partitioner = self._partitioner(temp_path, self._partition_table)
 
-        # Create partitions
-        start_blocks = self._bytes_to_blocks(self._padding_bytes[0],
-                                             aligned=True)
-        partitions_offset_blocks = []
-        for partition in self._partitions:
-            metadata = partition.metadata
-            partitions_offset_blocks.append(start_blocks)
-            partition_size_bytes = partition.get_total_size_bytes()
-            partition_size_blocks = self._bytes_to_blocks(partition_size_bytes)
+            # Create partitions
+            start_blocks = self._bytes_to_blocks(self._padding_bytes[0],
+                                                 aligned=True)
+            partitions_offset_blocks = []
+            for partition in self._partitions:
+                metadata = partition.metadata
+                partitions_offset_blocks.append(start_blocks)
+                partition_size_bytes = partition.get_total_size_bytes()
+                partition_size_blocks = self._bytes_to_blocks(partition_size_bytes)
 
-            partitioner.new_partition(start_blocks, partition_size_blocks,
-                                      partition.filesystem,
-                                      label=metadata.get('label', None),
-                                      flags=metadata.get('flags', []))
+                partitioner.new_partition(start_blocks, partition_size_blocks,
+                                          partition.filesystem,
+                                          label=metadata.get('label', None),
+                                          flags=metadata.get('flags', []))
 
-            # Update start_blocks
-            start_blocks += self._bytes_to_blocks(partition_size_blocks * 512,
-                                                  aligned=True)
+                # Update start_blocks
+                start_blocks += self._bytes_to_blocks(partition_size_blocks * 512,
+                                                      aligned=True)
 
-        partitioner.commit()
+            partitioner.commit()
 
-        # Write out partition files
-        for partition in self._partitions:
-            partition.commit()
+            # Write out partition files
+            for partition in self._partitions:
+                partition.commit()
 
-        # Double check the file sizes
-        for partition in self._partitions:
-            if partition.get_total_size_bytes() < os.path.getsize(partition.path):
-                raise UnknownError("Partition size changed during creation")
+            # Double check the file sizes
+            for partition in self._partitions:
+                if partition.get_total_size_bytes() < os.path.getsize(partition.path):
+                    raise UnknownError("Partition size changed during creation")
 
-        # Copy partition files into image file
-        for partition, offset_blocks in zip(self._partitions,
-                                            partitions_offset_blocks):
-            _copy_file_to_offset(partition.path, temp_path, offset_blocks,
-                                 self._blocksize)
+            # Copy partition files into image file
+            for partition, offset_blocks in zip(self._partitions,
+                                                partitions_offset_blocks):
+                _copy_file_to_offset(partition.path, temp_path, offset_blocks,
+                                     self._blocksize)
+
+            # Move tempfile into place
+            if os.path.exists(self._path):
+                os.unlink(self._path)
+            shutil.move(temp_path, self._path)
+
+        except Exception as exception:
+            # Clean up partition temp files
+            if self._clean_temp_files == "always":
+                for partition in self._partitions:
+                    partition.clean()
+                # Make sure image temp file is gone
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+
+            # Re-raise
+            raise exception
 
         # Clean up partition temp files
-        for partition in self._partitions:
-            partition.clean()
+        if self._clean_temp_files != "never":
+            for partition in self._partitions:
+                partition.clean()
+            # Make sure image temp file is gone
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
 
-        # Move tempfile into place
-        if os.path.exists(self._path):
-            os.unlink(self._path)
-        shutil.move(temp_path, self._path)
 
     def get_size_bytes(self):
         """
