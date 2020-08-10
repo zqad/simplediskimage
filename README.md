@@ -2,6 +2,9 @@ How to use
 ==========
 See `examples/` or https://simplediskimage.readthedocs.io/en/latest/
 
+Available on PyPI (`pip install simplediskimage`) or
+https://pypi.org/project/simplediskimage/
+
 Dependencies
 ============
 
@@ -45,10 +48,13 @@ work, unless done exactly.
 `copy_file_range` seems to misbehave in containers sometimes, observed on
 Fedora 30 + podman with Debian 10 container where it skips to copy some data.
 
-Future
-======
+Future ideas
+============
 - Configurable alignment, defaulting to 1MiB
 - Proper naive `copy_file_range` function, using `dup()`
 - Integrated and automated tests
-- GPT for sfdisk partitioner
+- GPT for sfdisk partitioner (and set it as the default)
+- sgdisk support?
 - Multiboot images (iso, efi, bios)
+- MTD-type partitions: Only offsets and a possibility to get a mtdparts=-type
+  string
