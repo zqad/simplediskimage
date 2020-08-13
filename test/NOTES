@@ -1,0 +1,11 @@
+make sandbox_defconfig
+./u-boot
+
+host bind 0 ../../../examples/foo.img
+host bind 1 ../../../examples/bar.img
+size host 1:1 u-boot.img
+load host 1:1 ${kernel_addr_r} u-boot.img
+=> hash sha1 ${kernel_addr_r} ${filesize}
+sha1 for 01000000 ... 01122b7b ==> d4ba918124ed71ba75ac9013ddf50aac9a1bd741
+
+.. borde fixa den där getc-grejen
