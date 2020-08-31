@@ -1,0 +1,20 @@
+---
+language: python
+python:
+  - "3.6"
+  - "3.7"
+  - "3.8"
+  - "nightly"  # nightly build
+dist: focal
+install:
+  - pip install .
+  # Requests is used to fetch u-boot
+  - pip install requests
+script:
+  #- 'sh -c "while sleep .1; do find -name u-boot-build.log | xargs -r tail -F; done" &'
+  - pytest test/
+before_install:
+  # Needed by simplediskimage
+  - sudo apt-get -y install libparted-dev dosfstools mtools e2fsprogs util-linux
+  # Needed by the tests (to build u-boot)
+  - sudo apt-get -y install build-essential libsdl2-dev
