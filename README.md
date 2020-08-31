@@ -52,7 +52,6 @@ Future ideas
 ============
 - Configurable alignment, defaulting to 1MiB
 - Proper naive `copy_file_range` function, using `dup()`
-- Automated tests
 - GPT for sfdisk partitioner (and set it as the default)
 - sgdisk support?
 - Multiboot images (iso, efi, bios)
