@@ -473,6 +473,7 @@ class RawPartition(Partition):
     :param metadata: Metadata.
     """
     def __init__(self, disk_image, temp_path, filesystem, metadata):
+        # pylint: disable=super-init-not-called
         self._disk_image = disk_image
         self._temp_path = temp_path
         self.path = None
@@ -490,7 +491,7 @@ class RawPartition(Partition):
         """
         raise InvalidArguments("Raw partition does not support mkdir")
 
-    def set_initial_data_root(self, path):
+    def set_initial_data_root(self, source_path):
         """
         Not supported
         """
