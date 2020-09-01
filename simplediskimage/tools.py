@@ -104,21 +104,21 @@ class MkfsExt2(MkfsExt):
     Tool wrapper for mkfs.ext2
     """
     def __init__(self):
-        super(MkfsExt2, self).__init__('mkfs.ext2')
+        super().__init__('mkfs.ext2')
 
 class MkfsExt3(MkfsExt):
     """
     Tool wrapper for mkfs.ext3
     """
     def __init__(self):
-        super(MkfsExt3, self).__init__('mkfs.ext3')
+        super().__init__('mkfs.ext3')
 
 class MkfsExt4(MkfsExt):
     """
     Tool wrapper for mkfs.ext4
     """
     def __init__(self):
-        super(MkfsExt4, self).__init__('mkfs.ext4')
+        super().__init__('mkfs.ext4')
 
 class MkfsFAT(Tool):
     """
@@ -126,7 +126,7 @@ class MkfsFAT(Tool):
     """
     def __init__(self, fat_size):
         self._fat_size = str(fat_size)
-        super(MkfsFAT, self).__init__('mkfs.fat')
+        super().__init__('mkfs.fat')
 
     def mkfs(self, device, label=None, initial_data_root=None):
         """
@@ -150,21 +150,21 @@ class MkfsFAT12(MkfsFAT):
     Tool wrapper for mkfs.fat -F 12
     """
     def __init__(self):
-        super(MkfsFAT12, self).__init__(12)
+        super().__init__(12)
 
 class MkfsFAT16(MkfsFAT):
     """
     Tool wrapper for mkfs.fat -F 16
     """
     def __init__(self):
-        super(MkfsFAT16, self).__init__(16)
+        super().__init__(16)
 
 class MkfsFAT32(MkfsFAT):
     """
     Tool wrapper for mkfs.fat -F 32
     """
     def __init__(self):
-        super(MkfsFAT32, self).__init__(32)
+        super().__init__(32)
 
 def _dq_check(filename):
     if '"' in filename:
@@ -203,7 +203,7 @@ class PopulateExt(Tool):
     Tool wrapper for debugfs
     """
     def __init__(self):
-        super(PopulateExt, self).__init__('debugfs')
+        super().__init__('debugfs')
 
     def run(self, device, actions):
         """
@@ -261,7 +261,7 @@ class Sfdisk(Tool):
     Tool wrapper for sfdisk
     """
     def __init__(self):
-        super(Sfdisk, self).__init__('sfdisk')
+        super().__init__('sfdisk')
 
 class PopulateFAT():
     """

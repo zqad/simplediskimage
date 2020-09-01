@@ -31,6 +31,7 @@ class Partitioner():
     def __init__(self, image_path, table_type):
         raise DiskImageException("Not implemented!")
 
+    # pylint: disable=no-self-use
     def new_partition(self, offset_blocks, size_blocks, filesystem, label=None,
                       flags=()):
         """
@@ -44,6 +45,7 @@ class Partitioner():
         """
         raise DiskImageException("Not implemented!")
 
+    # pylint: disable=no-self-use
     def commit(self):
         """
         Commit the partition table to the image
@@ -98,6 +100,7 @@ class Sfdisk(Partitioner):
     _allowed_flags = set(['BOOT'])
 
     def __init__(self, image_path, table_type):
+        # pylint: disable=super-init-not-called
         if table_type != 'msdos':
             raise DiskImageException("Table type not supported by this "
                                      "partitioner!")
@@ -145,6 +148,11 @@ class PyParted(Partitioner):
     _allowed_flags = set(['BOOT'])
 
     def __init__(self, image_path, table_type):
+        # pylint: disable=super-init-not-called
+
+        # Import parted here so that non-parted users will not be required
+        # to install the pyparted package
+        # pylint: disable=import-outside-toplevel
         import parted
         self._pmod = parted
 
@@ -259,6 +267,8 @@ class NullPartitioner(Partitioner):
     """
 
     def __init__(self, image_path, table_type):
+        # pylint: disable=super-init-not-called
+
         if table_type != "null":
             raise InvalidArguments("NullPartitioner only supports 'null' "
                                    "table type")

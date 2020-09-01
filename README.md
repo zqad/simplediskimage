@@ -57,3 +57,4 @@ Future ideas
 - Multiboot images (iso, efi, bios)
 - MTD-type partitions: Only offsets and a possibility to get a mtdparts=-type
   string
+- Fix travis pylint import fail

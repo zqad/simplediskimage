@@ -8,9 +8,11 @@ python:
 dist: focal
 install:
   - pip install .
-  # Requests is used to fetch u-boot
+  # Requests is used to fetch u-boot as part of the tests
   - pip install requests
 script:
+  # pylint does not find parted, even though we install it during the install step?
+  - pylint -d import-error simplediskimage/
   #- 'sh -c "while sleep .1; do find -name u-boot-build.log | xargs -r tail -F; done" &'
   - pytest test/
 before_install:
@@ -18,3 +20,5 @@ before_install:
   - sudo apt-get -y install libparted-dev dosfstools mtools e2fsprogs util-linux
   # Needed by the tests (to build u-boot)
   - sudo apt-get -y install build-essential libsdl2-dev
+  # Needed by the tests (pylint)
+  - sudo apt-get -y install pylint

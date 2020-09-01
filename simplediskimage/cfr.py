@@ -153,6 +153,7 @@ def get_copy_file_range():
 
     # Try to return native version
     try:
+        # pylint: disable=import-outside-toplevel
         from os import copy_file_range
         return copy_file_range
     except ImportError:

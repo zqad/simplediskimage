@@ -1,0 +1,9 @@
+[MASTER]
+
+# Yeah, well, that's just like your opinion, man.
+disable=global-statement,
+        too-many-instance-attributes,
+        too-many-locals,
+        too-many-return-statements,
+        too-many-branches,
+        too-many-arguments
