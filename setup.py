@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="simplediskimage",
-    version="0.3",
+    version="0.4",
     author="Jonas Eriksson",
     author_email="jonas@upto.se",
     description="Library used to build simple disk images with multiple partitions",
