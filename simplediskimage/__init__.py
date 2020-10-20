@@ -178,6 +178,7 @@ class DiskImage():
 
         # Create sparse file of the correct size
         temp_path = self._temp_fmt.format(path=self._path, extra="image")
+        logger.debug("Creating image file of size %d", image_size_bytes)
         _create_sparse_file(temp_path, image_size_bytes)
 
         try:
@@ -322,7 +323,8 @@ class Partition():
                 for parent, _dirs, files in os.walk(source_path):
                     for filename in files:
                         path = os.path.join(parent, filename)
-                        self._content_size_bytes += os.path.getsize(path)
+                        stat_res = os.lstat(path)
+                        self._content_size_bytes += stat_res[stat.ST_SIZE]
             elif os.path.isfile(source_path):
                 non_recursive_paths.append(source_path)
                 self._content_size_bytes += os.path.getsize(source_path)
@@ -367,10 +369,10 @@ class Partition():
         for parent, _dirs, files in os.walk(source_path):
             for filename in files:
                 path = os.path.join(parent, filename)
-                stat_res = os.stat(path)
+                stat_res = os.lstat(path)
                 id_tuple = (stat_res[stat.ST_INO], stat_res[stat.ST_DEV])
                 if id_tuple not in id_dict:
-                    self._content_size_bytes += os.path.getsize(path)
+                    self._content_size_bytes += stat_res[stat.ST_SIZE]
                     id_dict[id_tuple] = True
 
         self._initial_data_root = source_path
@@ -533,6 +535,7 @@ class RawPartition(Partition):
             return
 
         # Need to use the temp_path and copy the image to it
+        logger.debug("Creating image file of size %d", file_size)
         _create_sparse_file(self.path, file_size)
         _copy_file_to_offset(self.path, self._temp_path, 0, 1)
         # Switch around to point to the temp file instead
